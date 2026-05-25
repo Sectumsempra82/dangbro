@@ -28,19 +28,23 @@ The tool checks this automatically.
 
 If you are unsure if it's applicable for you, it can be tested without risk.
 
-## Debug mode
-
-Append `?debug` to the launcher URL before clicking connect:
-
-```
-https://azoffshowy.github.io/dangbro/?debug
-```
-
-If the exploit fails, the log (`/tmp/dangbro-root.log`) is automatically uploaded to [paste.rs](https://paste.rs) and the resulting URL is shown in the TV's alert dialog. The browser log panel also shows a `[debug mode — log upload enabled]` marker at startup.
-
-Log upload only triggers on **failure**. On success the log stays on the TV at `/tmp/dangbro-root.log`.
-
 ## Troubleshooting
+
+**Windows Launcher**
+If you have problems with connecting to the TV due to certificate error you can start chrome without certificate checks.
+Run this command within a PowerShell:
+
+```pwsh
+Start-Process "$env:ProgramFiles\Google\Chrome\Application\chrome.exe" -ArgumentList @(
+  "--user-data-dir=$env:TEMP\chrome-dangbro-insecure",
+  "--no-first-run",
+  "--ignore-certificate-errors",
+  "--allow-running-insecure-content",
+  "--disable-web-security",
+  "--new-window",
+  "https://azoffshowy.github.io/dangbro"
+)
+```
 
 - **Nothing happens on TV after launch**: the `dangbei-overlay` app may not exist on your firmware. Check whether the service is present / other rooting options.
 - **Root setup failed**: check `/tmp/dangbro-root.log` on the TV, or re-run in debug mode (see above) to get a shareable log URL.
