@@ -4,6 +4,20 @@ Browser-assisted root exploit chain for LG webOS TVs.
 
 **[Use it → azoffshowy.github.io/dangbro](https://azoffshowy.github.io/dangbro/)**
 
+**Want to keep the TV off the Internet?** Run DangBro from a computer on your
+LAN. Prepare the files once, then root with the TV's WAN access blocked:
+
+```sh
+python3 tools/prepare.py --bundle
+python3 serve.py --host 192.168.1.10
+```
+
+Use the **computer's** LAN IP in place of `192.168.1.10` and open the printed URL
+on that computer. Python 3.10+ is required. The preparation command downloads
+Homebrew Channel on the computer; `--ipk /path/to/package.ipk` imports an existing
+package without Internet access. See the [offline guide](OFFLINE.md) for the
+complete workflow, transferable ZIP, troubleshooting, and validation.
+
 ## How it works
 
 1. Enter your TV's local IP in the web UI
@@ -47,7 +61,7 @@ Start-Process "$env:ProgramFiles\Google\Chrome\Application\chrome.exe" -Argument
 ```
 
 - **Nothing happens on TV after launch**: the `dangbei-overlay` app may not exist on your firmware. Check whether the service is present / other rooting options.
-- **Root setup failed**: check `/tmp/dangbro-root.log` on the TV, or re-run in debug mode (see above) to get a shareable log URL.
+- **Root setup failed**: check `/tmp/dangbro-root.log` on the TV. Hosted debug mode can provide a shareable log URL; offline mode keeps logs on the TV, including when debugging.
 - **Rooting complete but no Homebrew Channel**: reboot the TV. Make sure **Quick Start+** is disabled (`Settings → General → Quick Start+`).
 - **IPK install error (errorCode -5)**: the TV's date/time is too far off. Correct it and retry.
 - **Certificate blocked / WSS fails instantly**: open `https://<TV-IP>:3001/` in your browser first and accept the self-signed certificate.
@@ -66,7 +80,7 @@ If dangbro-autoroot doesn't support your TV, see the alternative exploits below.
 
 ## Support
 
-For help rooting your TV, join the [OpenLGTV Discord](https://discord.gg/hXMHAgJC5R) and check #faq first. When asking for help, attach your `dangbro-root.log` (or the paste.rs URL from debug mode).
+For help rooting your TV, join the [OpenLGTV Discord](https://discord.gg/hXMHAgJC5R) and check #faq first. When asking for help, review your `dangbro-root.log` for device details before attaching it (or the paste.rs URL from hosted debug mode). Offline mode does not upload logs.
 
 ## Credits
 

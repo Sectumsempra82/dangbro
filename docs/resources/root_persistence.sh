@@ -7,7 +7,14 @@ LOGFILE="/tmp/dangbro-root.log"
 APPID="com.webos.service.secondscreen.gateway"
 SCRIPT_NAME="Dangbro Root"
 
-IPK_URL="${IPK_URL:-https://github.com/webosbrew/webos-homebrew-channel/releases/download/v0.7.3/org.webosbrew.hbchannel_0.7.3_all.ipk}"
+DANGBRO_OFFLINE="${DANGBRO_OFFLINE:-0}"
+if [ "$DANGBRO_OFFLINE" = "1" ]; then
+    # Offline failures must never fall back to GitHub or upload debug logs.
+    IPK_URL="${IPK_URL:-}"
+    UPLOAD_LOG=""
+else
+    IPK_URL="${IPK_URL:-https://github.com/webosbrew/webos-homebrew-channel/releases/download/v0.7.3/org.webosbrew.hbchannel_0.7.3_all.ipk}"
+fi
 IPK_TMP="/tmp/hbchannel.ipk"
 LUNA_FIFO="/tmp/dangbro-root.fifo"
 
@@ -132,6 +139,21 @@ prepare_hbc_ipk() {
     log "Downloading Homebrew Channel IPK from ${IPK_URL}."
     send_toast "Downloading Homebrew Channel..."
     rm -f "$IPK_TMP" 2>>"$LOGFILE"
+    if [ "$DANGBRO_OFFLINE" = "1" ]; then
+        local octet='(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])'
+        if ! printf '%s\n' "$IPK_URL" | grep -Eq "^http://(10\.$octet\.$octet\.$octet|192\.168\.$octet\.$octet|172\.(1[6-9]|2[0-9]|3[01])\.$octet\.$octet)(:[0-9]+)?/[A-Za-z0-9_./-]+$"; then
+            error_reason="Offline mode requires a private LAN IPK URL"
+            return 1
+        fi
+        # Do not follow redirects or inherit a proxy that could leave the LAN.
+        if curl --noproxy '*' --fail --connect-timeout 10 --max-time 120 -o "$IPK_TMP" -- "$IPK_URL" >>"$LOGFILE" 2>&1 \
+            && printf '%s  %s\n' 'd10bf3c753551d7c72fb7a92b20fcd2317e502a220ac668ba8e76f6ea78b363c' "$IPK_TMP" | sha256sum -c - >>"$LOGFILE" 2>&1; then
+            log "Local IPK downloaded and checksum verified."
+            return 0
+        fi
+        error_reason="Local Homebrew package download or checksum failed"
+        return 1
+    fi
     if curl -L -o "$IPK_TMP" -- "$IPK_URL" >>"$LOGFILE" 2>&1; then
         log "IPK downloaded successfully."
         return 0
@@ -213,6 +235,7 @@ run_elevation() {
 # ---------- reporting ----------
 
 upload_log() {
+    [ "$DANGBRO_OFFLINE" = "1" ] && return 1
     local url
     url="$(curl -s --max-time 10 --data-binary @"$LOGFILE" 'https://paste.rs' 2>/dev/null)"
     case "$url" in

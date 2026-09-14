@@ -69,7 +69,15 @@
     var stateEl = document.getElementById('state');
     var detailEl = document.getElementById('detail');
     var scriptPath = '/media/internal/downloads/root_persistence.sh';
-    var downloadTarget = 'https://azoffshowy.github.io/dangbro/resources/root_persistence.sh';
+    var offlineMode = window.location.protocol !== 'https:' || new URLSearchParams(window.location.search).has('offline');
+    var downloadTarget = offlineMode
+      ? new URL('../root_persistence.sh', window.location.href).toString()
+      : 'https://azoffshowy.github.io/dangbro/resources/root_persistence.sh';
+    var ipkTarget = new URL('../org.webosbrew.hbchannel_0.7.3_all.ipk', window.location.href).toString();
+    // IPK_URL enters a shell command; accept only a literal private IPv4 URL and a safe path.
+    if (offlineMode && !/^http:\/\/(?:10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+)(?::\d+)?\/[A-Za-z0-9_./-]+$/.test(ipkTarget)) {
+      throw new Error('Offline mode requires the LAN URL printed by serve.py.');
+    }
     var debugMode = new URLSearchParams(window.location.search).has('debug');
     var broadcastConfigNames = ['tv.nyx.tvBroadcastSystem', 'tv.model.sysType'];
 
@@ -116,7 +124,7 @@
         'luna://com.webos.service.legacybroadcast.debug/menu',
         JSON.stringify({
           menu: 'ci',
-          data: "ciplus20: sub=/ cmd=unbind sysname=';chmod${IFS}+x${IFS}" + scriptPath + ";" + (debugMode ? 'UPLOAD_LOG=1${IFS}' : '') + scriptPath + ";#'"
+          data: "ciplus20: sub=/ cmd=unbind sysname=';chmod${IFS}+x${IFS}" + scriptPath + ";" + (offlineMode ? 'DANGBRO_OFFLINE=1${IFS}IPK_URL=' + ipkTarget + '${IFS}' : (debugMode ? 'UPLOAD_LOG=1${IFS}' : '')) + scriptPath + ";#'"
         })
       );
       setState('pending', preInjectMessage+'watch your TV screen for the result. If nothing happens within 10s your TV might be patched.');
