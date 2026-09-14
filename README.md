@@ -28,7 +28,7 @@ Open the printed URL → enter the **TV's** IP → accept pairing → wait for s
 
 **[Offline setup ↓](#1-prepare-once-on-a-computer) · [Privacy installer ↓](#3-copy-and-run-the-privacy-installer) · [Recovery ↓](#recovery-and-troubleshooting) · [Exactly what gets blocked →](PRIVACY.md)**
 
-The repository also includes a **GitHub Pages hub with an online launcher**. Online mode needs Internet access on both devices; the offline bundle below keeps its LAN-only behavior. [Pages deployment details ↓](#github-pages)
+Get the complete bundle from the [offline download site](https://sectumsempra82.github.io/dangbro/). Run the launcher on your own computer; this fork is **offline-use only**.
 
 ## 🧰 What's in the box?
 
@@ -118,7 +118,7 @@ Re-enable normal TV Internet access only after reviewing successful verification
 
 ## GitHub Pages
 
-The generated site offers a prominent offline ZIP download, an online launcher, and the standalone privacy installer. It adds no analytics, external fonts or log uploads. Loading Pages contacts GitHub; using the online launcher also has the TV fetch its root script and pinned Homebrew package from GitHub Pages.
+GitHub Pages provides the offline ZIP, the standalone privacy installer, and setup instructions. It adds no analytics, external fonts or log uploads. Download the bundle on your computer and run it locally; the TV fetches rooting files only from your LAN server.
 
 ```sh
 python3 tools/prepare.py --bundle
@@ -127,7 +127,7 @@ python3 tools/build_pages.py
 
 The output is `dist/pages/`. Only that directory is uploaded by `.github/workflows/pages.yml`, using the [official Pages Actions workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages). Set repository **Settings → Pages → Source → GitHub Actions**, then publish the changes to `main` or manually run the workflow. The workflow runs tests before building and deploying.
 
-The configured site address is `https://sectumsempra82.github.io/dangbro/` once deployed. The generated online launcher accepts only that HTTPS origin and its `/dangbro/online/` path. For another fork/domain, review `PAGES_ORIGIN` and `PAGES_PATH` in the builder and update the landing page links. The builder changes only generated online assets; the offline ZIP and local server remain LAN-only.
+The download site is `https://sectumsempra82.github.io/dangbro/`. The builder publishes only the landing page and an explicit list of downloads. Launcher assets stay inside the offline ZIP and run on your computer. For another fork/domain, update the landing page and documentation links.
 
 ## Development and credits
 

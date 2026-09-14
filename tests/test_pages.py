@@ -2,16 +2,16 @@ import hashlib
 from html.parser import HTMLParser
 from pathlib import Path
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
 from urllib.parse import unquote, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import build_pages
-from offline import ASSETS, IPK
 
 ROOT = Path(__file__).resolve().parents[1]
+PUBLIC_FILES = {'index.html', '.nojekyll', 'downloads/README.md', 'downloads/PRIVACY.md',
+                'downloads/privacy.py', 'downloads/dangbro-offline.zip', 'downloads/SHA256SUMS'}
 
 class Links(HTMLParser):
     def __init__(self):
@@ -21,46 +21,38 @@ class Links(HTMLParser):
             if name in ('href', 'src'): self.links.append(value)
 
 class PagesTests(unittest.TestCase):
-    def test_hosted_build_keeps_offline_sources_unchanged_and_has_complete_downloads(self):
+    def prepare(self, root):
+        for name in ('README.md', 'PRIVACY.md', 'privacy.py', 'site/index.html'):
+            target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, target)
+        (root / 'dist').mkdir()
+        (root / 'dist' / 'dangbro-offline.zip').write_bytes(b'opaque offline fixture')
+
+    def test_only_downloads_are_published_and_all_links_resolve(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for name in ASSETS + ['resources/' + IPK]:
-                target = root / 'web' / name
-                target.parent.mkdir(parents=True, exist_ok=True)
-                if name.endswith('.ipk'): target.write_bytes(b'test fixture')
-                else: shutil.copyfile(ROOT / 'web' / name, target)
-            for name in ('README.md', 'PRIVACY.md', 'privacy.py', 'site/index.html'):
-                target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(ROOT / name, target)
-            (root / 'dist').mkdir()
-            bundle = root / 'dist' / 'dangbro-offline.zip'; bundle.write_bytes(b'opaque offline fixture')
-            before = {p.relative_to(root): p.read_bytes() for p in (root / 'web').rglob('*') if p.is_file()}
+            self.prepare(root)
             output = build_pages.build(root)
-            for name, data in before.items(): self.assertEqual((root / name).read_bytes(), data)
+            files = {p.relative_to(output).as_posix() for p in output.rglob('*') if p.is_file()}
+            self.assertEqual(files, PUBLIC_FILES)
+            bundle = root / 'dist' / 'dangbro-offline.zip'
             self.assertEqual((output / 'downloads' / bundle.name).read_bytes(), bundle.read_bytes())
             self.assertIn(hashlib.sha256(bundle.read_bytes()).hexdigest(), (output / 'downloads' / 'SHA256SUMS').read_text())
             parser = Links(); parser.feed((output / 'index.html').read_text())
             for link in parser.links:
                 parsed = urlsplit(link)
                 if not parsed.scheme and parsed.path:
-                    target = output / unquote(parsed.path)
-                    self.assertTrue(target.exists(), link)
-            source = (output / 'online' / 'resources' / 'root_persistence.sh').read_text()
-            self.assertNotIn('http://10.', source)
-            self.assertIn('https://sectumsempra82.github.io/dangbro/online/resources/' + IPK, source)
-            self.assertNotIn('paste.rs', source)
-            subprocess.run(['sh', '-n', str(output / 'online' / 'resources' / 'root_persistence.sh')], check=True)
-            generated = output / 'online' / 'local-url.js'
-            script = '''const fs = require('node:fs'); const assert = require('node:assert/strict');
-(async () => {
-const {localTarget} = await import('data:text/javascript;base64,' + fs.readFileSync(process.argv[1]).toString('base64'));
-assert.equal(localTarget('https://sectumsempra82.github.io/dangbro/online/'), 'https://sectumsempra82.github.io/dangbro/online/resources/dangbro/');
-for (const url of ['https://evil.example/dangbro/online/', 'http://sectumsempra82.github.io/dangbro/online/', 'https://sectumsempra82.github.io/other/', 'http://localhost/']) assert.throws(() => localTarget(url));
-})().catch(e => { console.error(e); process.exit(1); });'''
-            subprocess.run(['node', '-e', script, str(generated)], check=True)
+                    self.assertTrue((output / unquote(parsed.path)).exists(), link)
 
-    def test_source_drift_stops_build_instead_of_relaxing_url_checks(self):
-        with self.assertRaises(ValueError): build_pages.replace_once('changed source', 'expected guard', 'replacement')
-        with self.assertRaises(ValueError): build_pages.replace_once('xx', 'x', 'replacement')
+    def test_rebuild_removes_previously_published_launcher_assets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.prepare(root)
+            stale = root / 'dist' / 'pages' / 'online' / 'resources'
+            stale.mkdir(parents=True)
+            (stale / 'root_persistence.sh').write_text('old executable asset')
+            output = build_pages.build(root)
+            self.assertFalse((output / 'online').exists())
+            self.assertEqual({p.relative_to(output).as_posix() for p in output.rglob('*') if p.is_file()}, PUBLIC_FILES)
 
 if __name__ == '__main__': unittest.main()
