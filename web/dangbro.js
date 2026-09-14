@@ -1,3 +1,4 @@
+import { localTarget } from './local-url.js';
 const $ = (id) => document.getElementById(id);
 
 const logEl = $('log');
@@ -7,10 +8,10 @@ const tvIpEl = $('tvIp');
 const connectBtn = $('connectBtn');
 
 const CONNECT_TIMEOUT_MS = 7000;
-const CERT_HELP_URL = 'https://help.motorolanetwork.com/kb/general/troubleshooting-connection-isn-t-private-message';
+const CERT_HELP_URL = new URL('./help.html', window.location.href).toString();
 const CLIENT_KEY_PREFIX = 'webos-ssap-client-key:';
 const debugMode = new URLSearchParams(window.location.search).has('debug');
-const targetUrl = new URL('./resources/dangbro/' + (debugMode ? '?debug' : ''), window.location.href).toString();
+let targetUrl;
 
 const state = {
   attempt: 0,
@@ -405,6 +406,16 @@ bridge.addEventListener('ssap-message', async (event) => {
 });
 
 async function startConnect() {
+  try {
+    targetUrl = localTarget(window.location.href, debugMode);
+    for (const asset of ['root_persistence.sh', 'org.webosbrew.hbchannel_0.7.3_all.ipk']) {
+      const response = await fetch(new URL('../' + asset, targetUrl), { method: 'HEAD', cache: 'no-store' });
+      if (!response.ok) throw new Error('Missing local asset: ' + asset + '. Run tools/prepare.py first.');
+    }
+  } catch (error) {
+    log('error', error.message);
+    return;
+  }
   const ip = tvIpEl.value.trim();
   if (!ip) {
     log('error', 'Please enter a TV IP.');
@@ -463,5 +474,5 @@ tvIpEl.addEventListener('keyup', () => localStorage.setItem('webos-last-ip', tvI
   const savedIp = localStorage.getItem('webos-last-ip') || '';
   if (savedIp) tvIpEl.value = savedIp;
   setStatus('', 'Idle');
-  log('boot', 'DangBro page ready.' + (debugMode ? ' [debug mode — log upload enabled]' : ''));
+  log('boot', 'DangBro page ready.' + (debugMode ? ' [debug mode — logs stay local]' : ''));
 })();

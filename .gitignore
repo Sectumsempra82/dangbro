@@ -1,0 +1,8 @@
+AGENTS.md
+/docs/
+.notebook/
+__pycache__/
+*.pyc
+.DS_Store
+/dist/
+/web/resources/*.ipk

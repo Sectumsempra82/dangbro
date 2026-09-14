@@ -7,7 +7,7 @@ LOGFILE="/tmp/dangbro-root.log"
 APPID="com.webos.service.secondscreen.gateway"
 SCRIPT_NAME="Dangbro Root"
 
-IPK_URL="${IPK_URL:-https://github.com/webosbrew/webos-homebrew-channel/releases/download/v0.7.3/org.webosbrew.hbchannel_0.7.3_all.ipk}"
+IPK_URL="${IPK_URL:-}"
 IPK_TMP="/tmp/hbchannel.ipk"
 LUNA_FIFO="/tmp/dangbro-root.fifo"
 
@@ -132,7 +132,12 @@ prepare_hbc_ipk() {
     log "Downloading Homebrew Channel IPK from ${IPK_URL}."
     send_toast "Downloading Homebrew Channel..."
     rm -f "$IPK_TMP" 2>>"$LOGFILE"
-    if curl -L -o "$IPK_TMP" -- "$IPK_URL" >>"$LOGFILE" 2>&1; then
+    case "$IPK_URL" in
+        http://10.*/*|http://192.168.*/*|http://172.*/*) ;;
+        *) error_reason="Missing local Homebrew package URL"; return 1 ;;
+    esac
+    if curl --noproxy '*' --fail --connect-timeout 10 --max-time 120 -o "$IPK_TMP" -- "$IPK_URL" >>"$LOGFILE" 2>&1 &&
+       printf '%s  %s\n' 'd10bf3c753551d7c72fb7a92b20fcd2317e502a220ac668ba8e76f6ea78b363c' "$IPK_TMP" | sha256sum -c - >>"$LOGFILE" 2>&1; then
         log "IPK downloaded successfully."
         return 0
     fi
@@ -212,20 +217,6 @@ run_elevation() {
 
 # ---------- reporting ----------
 
-upload_log() {
-    local url
-    url="$(curl -s --max-time 10 --data-binary @"$LOGFILE" 'https://paste.rs' 2>/dev/null)"
-    case "$url" in
-        https://paste.rs/*)
-            log "Log uploaded: ${url}"
-            echo "$url"
-            return 0
-            ;;
-    esac
-    log "Log upload failed or returned unexpected response."
-    return 1
-}
-
 show_final_alert() {
     local outcome="$1"  # "success" or "failure"
     local base_msg base_instruction extra_msg message buttons
@@ -247,12 +238,7 @@ show_final_alert() {
     else
         base_msg="Root setup failed."
         [ -n "$error_reason" ] && base_msg="${base_msg} Error: ${error_reason}."
-        local log_url
-        if [ -n "${UPLOAD_LOG}" ] && log_url="$(upload_log)"; then
-            base_msg="${base_msg}<br>Log: ${log_url}"
-        else
-            base_msg="${base_msg} Check /tmp/dangbro-root.log for details."
-        fi
+        base_msg="${base_msg} Check /tmp/dangbro-root.log for details. Logs stay on the TV."
     fi
 
     case "$devmode_state" in
