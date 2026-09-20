@@ -26,8 +26,6 @@ Open the printed URL → enter the **TV's** IP → accept pairing → wait for s
 
 **[Offline setup ↓](#1-prepare-once-on-a-computer) · [Recovery ↓](#recovery-and-troubleshooting)**
 
-Privacy hardening is maintained separately in [PWN-your-glass](https://github.com/Sectumsempra82/PWN-your-glass). That repository is currently private and requires access. Privacy scripts are no longer included in this fork or its downloads.
-
 Get the complete bundle from the [offline download site](https://sectumsempra82.github.io/dangbro/). Run the launcher on your own computer; this fork is **offline-use only**.
 
 ## 🧰 What's in the box?
