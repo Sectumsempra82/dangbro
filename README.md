@@ -2,16 +2,14 @@
 
 **Root locally. Make yourself at home.**
 
-Bring Homebrew to your LG TV without giving it Internet access. Then take control of ACR, voice features, ads and diagnostics with a separate, reversible privacy installer—while keeping normal networking and picture/audio processing available.
+Bring Homebrew to your LG TV without giving it Internet access. Prepare the files on your computer and run the rooting workflow over your own LAN.
 
-Built on [azoffshowy/dangbro](https://github.com/azoffshowy/dangbro), with offline setup and selective privacy controls added.
+Built on [azoffshowy/dangbro](https://github.com/azoffshowy/dangbro), with offline preparation, local serving and portable packaging added.
 
 ## ⚡ TL;DR — get to the good part
 
 - **Root over LAN.** The TV can stay blocked from the Internet throughout setup.
 - **Pack it and go.** One ZIP contains the website, root script and verified Homebrew package. Logs stay local.
-- **Copy one privacy script.** Apply the reviewed controls, keep them across normal reboots, verify them, or restore.
-- **Choose your access.** Telnet stays as-is unless you explicitly disable it; working SSH is required first.
 
 On your computer, with **Python 3.10+**:
 
@@ -24,9 +22,11 @@ python3 serve.py --host 192.168.1.10
 
 Open the printed URL → enter the **TV's** IP → accept pairing → wait for success → disable **Quick Start+** → reboot → confirm **Root OK** in Homebrew Channel.
 
-> **Two separate compatibility checks:** rooting needs a vulnerable DVB-tuner webOS build. The optional privacy installer currently targets **OLED65G56LS / webOS TV 10.2.1** only and is **experimental** pending a complete clean-TV test. [Check the privacy setup before running it.](#3-copy-and-run-the-privacy-installer)
+> Rooting needs a vulnerable DVB-tuner webOS build. Check your model and firmware before running the local workflow.
 
-**[Offline setup ↓](#1-prepare-once-on-a-computer) · [Privacy installer ↓](#3-copy-and-run-the-privacy-installer) · [Recovery ↓](#recovery-and-troubleshooting) · [Exactly what gets blocked →](PRIVACY.md)**
+**[Offline setup ↓](#1-prepare-once-on-a-computer) · [Recovery ↓](#recovery-and-troubleshooting)**
+
+Privacy hardening is maintained separately in [PWN-your-glass](https://github.com/Sectumsempra82/PWN-your-glass). That repository is currently private and requires access. Privacy scripts are no longer included in this fork or its downloads.
 
 Get the complete bundle from the [offline download site](https://sectumsempra82.github.io/dangbro/). Run the launcher on your own computer; this fork is **offline-use only**.
 
@@ -36,7 +36,6 @@ Get the complete bundle from the [offline download site](https://sectumsempra82.
 | --- | --- |
 | `serve.py` | Serves the rooting files from your computer's LAN address. |
 | `tools/prepare.py` | Verifies the pinned Homebrew package and builds a portable offline ZIP. |
-| `privacy.py` | Installs selective privacy controls with backups, verification and restore. |
 
 No runtime CDN dependencies, external package downloads, or automatic log uploads. **LAN access is still required.** Existing TV firmware/apps may independently attempt Internet connections, so block the TV's WAN access at your router during setup while allowing LAN traffic.
 
@@ -75,50 +74,16 @@ The expected SHA-256 is `d10bf3c753551d7c72fb7a92b20fcd2317e502a220ac668ba8e76f6
 
 The server binds only the selected LAN interface and serves only `web/`; it rejects directory listings, hidden paths and symlinks. Keep it on a trusted LAN and do not expose it through router port forwarding. HTTP is needed by this workflow; the pinned IPK checksum detects package corruption but does not authenticate every exploit asset against a hostile LAN peer.
 
-Upstream targets vulnerable **DVB-tuner webOS 7.x through webOS 25** builds. Patched firmware or a missing `dangbei-overlay`/legacy-broadcast path will not work. This is upstream's compatibility claim, not a guarantee that every model was tested here. The privacy installer has a much narrower profile below.
-
-## 3. Copy and run the privacy installer
-
-**Experimental packaged installer:** its underlying controls were tested on an LG OLED65G56LS running webOS TV 10.2.1. The new complete installer has automated host-side tests but still needs an end-to-end test on a clean TV. It deliberately refuses other models/layouts and existing manual privacy installations.
-
-Only **`privacy.py`** needs to be copied to the already rooted TV. It embeds the policy and installs its own runtime files and boot hook. It needs the TV's existing Python 3.10+, standard Linux tools and working Homebrew persistence. It downloads nothing.
-
-Copy using your existing SSH access, or a USB drive. For example, replacing `TV-IP`:
-
-```sh
-scp privacy.py root@TV-IP:/tmp/privacy.py
-ssh -t root@TV-IP
-python3 /tmp/privacy.py check
-python3 /tmp/privacy.py install
-```
-
-Telnet is left unchanged by default. To disable it on the **next normal boot**, first enable Homebrew SSH, install your own authorized key, and confirm a working SSH login, then run from that SSH session:
-
-```sh
-python3 /tmp/privacy.py install --disable-telnet
-```
-
-This does not interrupt the current Telnet session. Homebrew's emergency failsafe can start Telnet even when this preference is set. The script never installs passwords or SSH keys.
-
-Keep the physical microphone switch **Off**. After installation, reboot with Quick Start+ disabled, then run:
-
-```sh
-python3 /var/lib/webosbrew/dangbro-privacy/privacy.py verify
-```
-
-Re-enable normal TV Internet access only after reviewing successful verification. Read [PRIVACY.md](PRIVACY.md) for exact tradeoffs, backup/restore instructions and the limits of the protection. This is selective hardening: normal Internet, apps, casting, LAN discovery and image/audio processing remain outside the block list. LG voice features, ACR/viewing collection, personalized advertising, recommendations, diagnostics uploads and firmware updates are deliberately affected.
+Upstream targets vulnerable **DVB-tuner webOS 7.x through webOS 25** builds. Patched firmware or a missing `dangbei-overlay`/legacy-broadcast path will not work. This is upstream's compatibility claim, not a guarantee that every model was tested here.
 
 ## Recovery and troubleshooting
 
 - **Root error:** inspect `/tmp/dangbro-root.log` locally. Debug mode does not upload it.
 - **IPK error -5:** check the TV's date/time; an incorrect clock can prevent installation.
-- **Privacy check says unsupported:** do not bypass the check. Another model/firmware needs its own reviewed profile.
-- **Partial privacy installation:** keep WAN blocked and inspect `/tmp/dangbro-privacy.log` and the private state/backup directory. Use `restore` if necessary. The script leaves already applied protections in place when a later step fails.
-- **Restore:** `python3 /var/lib/webosbrew/dangbro-privacy/privacy.py restore`, then reboot manually. Quarantined uploads are not requeued and optional legal consents remain declined.
 
 ## GitHub Pages
 
-GitHub Pages provides the offline ZIP, the standalone privacy installer, and setup instructions. It adds no analytics, external fonts or log uploads. Download the bundle on your computer and run it locally; the TV fetches rooting files only from your LAN server.
+GitHub Pages provides the offline rooting ZIP and setup instructions. It adds no analytics, external fonts or log uploads. Download the bundle on your computer and run it locally; the TV fetches rooting files only from your LAN server.
 
 ```sh
 python3 tools/prepare.py --bundle

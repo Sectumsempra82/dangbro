@@ -34,7 +34,7 @@ def main():
         output = ROOT / 'dist' / 'dangbro-offline.zip'
         output.parent.mkdir(exist_ok=True)
         # Explicit allowlist prevents accidental inclusion of keys, recordings, or backups.
-        files = [ROOT / name for name in ['README.md', 'PRIVACY.md', 'serve.py', 'privacy.py']]
+        files = [ROOT / name for name in ['README.md', 'serve.py']]
         files += [WEB / name for name in ASSETS] + [WEB / 'resources' / IPK]
         files += [ROOT / 'tools' / name for name in ['offline.py', 'prepare.py']]
         with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:

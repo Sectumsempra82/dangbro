@@ -14,7 +14,7 @@ def build(root=ROOT):
     downloads = output / 'downloads'
     downloads.mkdir(parents=True)
     shutil.copyfile(root / 'site' / 'index.html', output / 'index.html')
-    for name in ['README.md', 'PRIVACY.md', 'privacy.py']:
+    for name in ['README.md']:
         shutil.copyfile(root / name, downloads / name)
     bundle = root / 'dist' / 'dangbro-offline.zip'
     shutil.copyfile(bundle, downloads / bundle.name)
