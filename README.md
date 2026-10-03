@@ -6,6 +6,8 @@ Bring Homebrew to your LG TV without giving it Internet access. Prepare the file
 
 Built on [azoffshowy/dangbro](https://github.com/azoffshowy/dangbro), with offline preparation, local serving and portable packaging added.
 
+For privacy controls after rooting, see the separate [PWN-your-glass project](https://github.com/Sectumsempra82/PWN-your-glass). Its supported models and validation limits are documented there.
+
 ## ⚡ TL;DR — get to the good part
 
 - **Root over LAN.** The TV can stay blocked from the Internet throughout setup.
